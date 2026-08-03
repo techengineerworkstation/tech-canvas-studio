@@ -29,6 +29,7 @@ const config = {
       { target: 'tar.gz', arch: ['x64'] },
     ],
     category: 'Graphics',
+    compression: 'normal',
     icon: 'icons',
     maintainer: 'TechEngineer Workstation <tech@example.com>',
     vendor: 'TechEngineer Workstation',

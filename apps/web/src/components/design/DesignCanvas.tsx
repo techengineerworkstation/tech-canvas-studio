@@ -5,8 +5,8 @@ import * as fabric from 'fabric';
 import {
   MousePointer, Type, Square, Circle, Triangle, Star,
   Minus, ArrowRight, Diamond, Hexagon, Plus, ZoomIn, ZoomOut,
-  Maximize, Grid3X3, Undo2, Redo2, Trash2, Copy, Lock, Unlock,
-  Wand2, Layers, Image as ImageIcon, Palette, Sparkles
+  Maximize, Trash2, Copy, Wand2, Palette, Image as ImageIcon,
+  Layers, Download, Undo2, Redo2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStudioStore } from '@/store/studioStore';
@@ -15,14 +15,14 @@ import { socialPresets } from '@/lib/express';
 const tools = [
   { id: 'select', label: 'Select', icon: MousePointer },
   { id: 'text', label: 'Text', icon: Type },
-  { id: 'rect', label: 'Rectangle', icon: Square },
+  { id: 'rect', label: 'Rect', icon: Square },
   { id: 'circle', label: 'Circle', icon: Circle },
   { id: 'triangle', label: 'Triangle', icon: Triangle },
   { id: 'star', label: 'Star', icon: Star },
   { id: 'line', label: 'Line', icon: Minus },
   { id: 'arrow', label: 'Arrow', icon: ArrowRight },
   { id: 'diamond', label: 'Diamond', icon: Diamond },
-  { id: 'hexagon', label: 'Hexagon', icon: Hexagon },
+  { id: 'hexagon', label: 'Hex', icon: Hexagon },
 ];
 
 export function DesignCanvas() {
@@ -32,19 +32,26 @@ export function DesignCanvas() {
   const [zoom, setZoom] = useState(1);
   const [canvasSize, setCanvasSize] = useState({ width: 1920, height: 1080 });
   const [selectedObject, setSelectedObject] = useState<InstanceType<typeof fabric.FabricObject> | null>(null);
-  const [canvasReady, setCanvasReady] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [fitToScreen, setFitToScreen] = useState(false);
 
   const activeBrand = useStudioStore((s) => s.getActiveBrand());
   const selectedImage = useStudioStore((s) => s.getSelectedImage());
+  const currentProject = useStudioStore((s) => s.currentProject);
+
+  // Sync canvas size when project/template changes
+  useEffect(() => {
+    if (currentProject) {
+      setCanvasSize({ width: currentProject.width, height: currentProject.height });
+    }
+  }, [currentProject]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
     const canvas = new fabric.Canvas(canvasRef.current, {
-      width: canvasSize.width / 2,
-      height: canvasSize.height / 2,
-      backgroundColor: '#faf6f0',
+      width: canvasSize.width,
+      height: canvasSize.height,
+      backgroundColor: '#ffffff',
       selection: true,
       preserveObjectStacking: true,
     });
@@ -58,10 +65,13 @@ export function DesignCanvas() {
     canvas.on('selection:cleared', () => setSelectedObject(null));
 
     fabricRef.current = canvas;
-    setCanvasReady(true);
+
+    // Initial fit
+    handleFit(canvas);
 
     return () => {
       canvas.dispose();
+      fabricRef.current = null;
     };
   }, [canvasSize]);
 
@@ -80,6 +90,22 @@ export function DesignCanvas() {
     }
   }, [activeBrand]);
 
+  const handleFit = (canvas?: InstanceType<typeof fabric.Canvas>) => {
+    const c = canvas || fabricRef.current;
+    if (!c) return;
+    const container = c.wrapperEl?.parentElement;
+    if (!container) return;
+    const padding = 64;
+    const scaleX = (container.clientWidth - padding) / c.width;
+    const scaleY = (container.clientHeight - padding) / c.height;
+    const newZoom = Math.min(scaleX, scaleY, 1);
+    c.setZoom(newZoom);
+    c.setViewportTransform([newZoom, 0, 0, newZoom, 0, 0]);
+    setZoom(newZoom);
+    setFitToScreen(true);
+    c.renderAll();
+  };
+
   const handleToolClick = useCallback((toolId: string) => {
     setActiveTool(toolId);
     if (!fabricRef.current) return;
@@ -88,66 +114,65 @@ export function DesignCanvas() {
     if (toolId === 'select') {
       canvas.selection = true;
       canvas.defaultCursor = 'default';
+      canvas.isDrawingMode = false;
       return;
     }
 
     canvas.selection = false;
     canvas.defaultCursor = 'crosshair';
 
-    const brandColor = activeBrand?.color || '#d4884f';
+    const brandColor = activeBrand?.color || '#c26e3a';
     let obj: InstanceType<typeof fabric.FabricObject>;
 
     switch (toolId) {
       case 'text':
         obj = new fabric.IText('Double click to edit', {
-          left: 100,
-          top: 100,
-          fontSize: 36,
+          left: 80,
+          top: 80,
+          fontSize: 42,
           fill: brandColor,
           fontFamily: activeBrand?.fonts[0] || 'Inter',
         });
         break;
       case 'rect':
-        obj = new fabric.Rect({ left: 100, top: 100, width: 200, height: 150, fill: brandColor, rx: 8, ry: 8 });
+        obj = new fabric.Rect({ left: 80, top: 80, width: 200, height: 150, fill: brandColor, rx: 8, ry: 8 });
         break;
       case 'circle':
-        obj = new fabric.Circle({ left: 100, top: 100, radius: 75, fill: brandColor });
+        obj = new fabric.Circle({ left: 80, top: 80, radius: 80, fill: brandColor });
         break;
       case 'triangle':
-        obj = new fabric.Triangle({ left: 100, top: 100, width: 150, height: 130, fill: brandColor });
-        break;
-      case 'line':
-        obj = new fabric.Line([100, 100, 300, 100], { stroke: brandColor, strokeWidth: 3 });
+        obj = new fabric.Triangle({ left: 80, top: 80, width: 160, height: 140, fill: brandColor });
         break;
       case 'star':
         obj = new fabric.Polygon(
           [
-            { x: 75, y: 0 }, { x: 90, y: 50 }, { x: 150, y: 50 },
-            { x: 105, y: 80 }, { x: 120, y: 130 }, { x: 75, y: 100 },
-            { x: 30, y: 130 }, { x: 45, y: 80 }, { x: 0, y: 50 }, { x: 60, y: 50 },
+            { x: 80, y: 0 }, { x: 95, y: 50 }, { x: 155, y: 50 },
+            { x: 110, y: 80 }, { x: 125, y: 130 }, { x: 80, y: 100 },
+            { x: 35, y: 130 }, { x: 50, y: 80 }, { x: 5, y: 50 }, { x: 65, y: 50 },
           ],
-          { left: 100, top: 100, fill: brandColor }
+          { left: 80, top: 80, fill: brandColor }
         );
         break;
       case 'diamond':
         obj = new fabric.Polygon(
-          [
-            { x: 75, y: 0 }, { x: 150, y: 75 }, { x: 75, y: 150 }, { x: 0, y: 75 },
-          ],
-          { left: 100, top: 100, fill: brandColor }
+          [{ x: 80, y: 0 }, { x: 160, y: 80 }, { x: 80, y: 160 }, { x: 0, y: 80 }],
+          { left: 80, top: 80, fill: brandColor }
         );
         break;
       case 'hexagon':
         obj = new fabric.Polygon(
           [
-            { x: 75, y: 0 }, { x: 140, y: 37 }, { x: 140, y: 113 },
-            { x: 75, y: 150 }, { x: 10, y: 113 }, { x: 10, y: 37 },
+            { x: 80, y: 0 }, { x: 150, y: 40 }, { x: 150, y: 120 },
+            { x: 80, y: 160 }, { x: 10, y: 120 }, { x: 10, y: 40 },
           ],
-          { left: 100, top: 100, fill: brandColor }
+          { left: 80, top: 80, fill: brandColor }
         );
         break;
+      case 'line':
+        obj = new fabric.Line([80, 80, 320, 80], { stroke: brandColor, strokeWidth: 4 });
+        break;
       case 'arrow':
-        obj = new fabric.Line([100, 100, 300, 100], { stroke: brandColor, strokeWidth: 6 });
+        obj = new fabric.Line([80, 80, 320, 80], { stroke: brandColor, strokeWidth: 6 });
         break;
       default:
         return;
@@ -165,11 +190,15 @@ export function DesignCanvas() {
     if (!fabricRef.current) return;
     const canvas = fabricRef.current;
     let newZoom = zoom;
-    if (direction === 'in') newZoom = Math.min(zoom * 1.2, 5);
-    if (direction === 'out') newZoom = Math.max(zoom / 1.2, 0.1);
-    if (direction === 'fit') newZoom = 1;
+    if (direction === 'in') newZoom = Math.min(zoom * 1.15, 3);
+    if (direction === 'out') newZoom = Math.max(zoom / 1.15, 0.1);
+    if (direction === 'fit') {
+      handleFit(canvas);
+      return;
+    }
     canvas.setZoom(newZoom);
     setZoom(newZoom);
+    setFitToScreen(false);
     canvas.renderAll();
   };
 
@@ -184,14 +213,14 @@ export function DesignCanvas() {
     if (!fabricRef.current || !selectedObject) return;
     selectedObject.clone()
       .then((cloned: InstanceType<typeof fabric.FabricObject>) => {
-        cloned.set({ left: (cloned.left || 0) + 20, top: (cloned.top || 0) + 20 });
+        cloned.set({ left: (cloned.left || 0) + 24, top: (cloned.top || 0) + 24 });
         fabricRef.current!.add(cloned);
         fabricRef.current!.setActiveObject(cloned);
         fabricRef.current!.renderAll();
       });
   };
 
-  const handleAddImage = async () => {
+  const handleAddImage = () => {
     if (!fabricRef.current) return;
     const input = document.createElement('input');
     input.type = 'file';
@@ -244,9 +273,13 @@ export function DesignCanvas() {
     fabricRef.current.renderAll();
   };
 
+  const selectedFill = (selectedObject?.fill as string) || activeBrand?.color || '#c26e3a';
+  const isText = selectedObject instanceof fabric.IText || (selectedObject as any)?.type === 'i-text';
+
   return (
     <div className="flex h-full">
-      <div className="w-16 bg-surface-dark border-r border-border flex flex-col items-center py-4 gap-2">
+      {/* Left Toolbar */}
+      <div className="w-14 shrink-0 panel border-r flex flex-col items-center py-3 gap-1.5">
         {tools.map((tool) => {
           const Icon = tool.icon;
           return (
@@ -254,73 +287,49 @@ export function DesignCanvas() {
               key={tool.id}
               onClick={() => handleToolClick(tool.id)}
               className={cn(
-                'w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-150',
+                'w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-150',
                 activeTool === tool.id
-                  ? 'bg-brand-600 text-white'
-                  : 'text-text-secondary hover:bg-surface-light hover:text-text-primary'
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-text-secondary hover:bg-surface-dark hover:text-text-primary'
               )}
               title={tool.label}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className="w-4 h-4" />
             </button>
           );
         })}
 
-        <div className="w-8 h-px bg-border my-2"></div>
+        <div className="w-6 h-px bg-border my-1" />
 
-        <button
-          onClick={handleAddImage}
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-light hover:text-text-primary transition-colors duration-150"
-          title="Add Image"
-        >
-          <Plus className="w-5 h-5" />
+        <button onClick={handleAddImage} className="w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-dark hover:text-text-primary transition-colors duration-150" title="Add Image">
+          <Plus className="w-4 h-4" />
         </button>
 
-        <button
-          onClick={() => setShowQuickActions(!showQuickActions)}
-          className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-150',
-            showQuickActions ? 'bg-brand-100 text-brand-700' : 'text-text-secondary hover:bg-surface-light hover:text-text-primary'
-          )}
-          title="Quick Actions"
-        >
-          <Sparkles className="w-5 h-5" />
+        {selectedImage && (
+          <button onClick={handleAddAiImage} className="w-9 h-9 rounded-lg flex items-center justify-center text-brand-600 hover:bg-brand-50 transition-colors duration-150" title="Add AI Image">
+            <Wand2 className="w-4 h-4" />
+          </button>
+        )}
+
+        <div className="flex-1" />
+
+        <button onClick={handleDuplicate} disabled={!selectedObject} className={cn('w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-150', selectedObject ? 'text-text-secondary hover:bg-surface-dark hover:text-text-primary' : 'text-text-dim cursor-not-allowed')} title="Duplicate">
+          <Copy className="w-4 h-4" />
         </button>
-
-        <div className="flex-1"></div>
-
-        <button
-          onClick={handleDelete}
-          disabled={!selectedObject}
-          className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-150',
-            selectedObject ? 'text-red-500 hover:bg-red-50' : 'text-text-dim cursor-not-allowed'
-          )}
-          title="Delete"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={handleDuplicate}
-          disabled={!selectedObject}
-          className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-150',
-            selectedObject ? 'text-text-secondary hover:bg-surface-light hover:text-text-primary' : 'text-text-dim cursor-not-allowed'
-          )}
-          title="Duplicate"
-        >
-          <Copy className="w-5 h-5" />
+        <button onClick={handleDelete} disabled={!selectedObject} className={cn('w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-150', selectedObject ? 'text-red-500 hover:bg-red-50' : 'text-text-dim cursor-not-allowed')} title="Delete">
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col">
-        <div className="h-12 bg-surface-dark border-b border-border flex items-center px-4 justify-between">
+      {/* Main Canvas Area */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Toolbar */}
+        <div className="h-11 shrink-0 border-b border-border bg-surface-medium flex items-center px-3 justify-between">
           <div className="flex items-center gap-2">
             <select
               value={canvasSize.width + 'x' + canvasSize.height}
               onChange={(e) => handlePresetChange(e.target.value)}
-              className="select-field"
+              className="select-field h-7 py-0 text-xs"
             >
               {socialPresets.map((preset) => (
                 <option key={preset.name} value={preset.width + 'x' + preset.height}>
@@ -329,105 +338,95 @@ export function DesignCanvas() {
               ))}
             </select>
 
-            <div className="w-px h-6 bg-border mx-2"></div>
+            <div className="w-px h-5 bg-border mx-1" />
 
-            <button onClick={() => {}} className="btn-ghost p-2" title="Undo">
-              <Undo2 className="w-4 h-4" />
+            <button onClick={() => {}} className="btn-ghost h-7 w-7 p-0" title="Undo">
+              <Undo2 className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => {}} className="btn-ghost p-2" title="Redo">
-              <Redo2 className="w-4 h-4" />
+            <button onClick={() => {}} className="btn-ghost h-7 w-7 p-0" title="Redo">
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 bg-surface-dark rounded-lg px-1 py-0.5 border border-border">
+            <button onClick={() => handleZoom('out')} className="btn-ghost h-6 w-6 p-0" title="Zoom Out">
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-xs text-text-secondary min-w-[44px] text-center font-medium">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button onClick={() => handleZoom('in')} className="btn-ghost h-6 w-6 p-0" title="Zoom In">
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => handleZoom('fit')} className={cn('btn-ghost h-6 w-6 p-0', fitToScreen && 'text-brand-600 bg-brand-50')} title="Fit to Screen">
+              <Maximize className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <button onClick={() => handleZoom('out')} className="btn-ghost p-2" title="Zoom Out">
-              <ZoomOut className="w-4 h-4" />
+            <button onClick={handleExport} className="btn-secondary h-7 text-xs px-3">
+              <Download className="w-3.5 h-3.5" /> Export
             </button>
-            <span className="text-sm text-text-secondary min-w-[50px] text-center">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => handleZoom('in')} className="btn-ghost p-2" title="Zoom In">
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <button onClick={() => handleZoom('fit')} className="btn-ghost p-2" title="Fit to Screen">
-              <Maximize className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {selectedImage && (
-              <button onClick={handleAddAiImage} className="btn-secondary text-sm flex items-center gap-2">
-                <Wand2 className="w-4 h-4" /> AI Image
-              </button>
-            )}
-            <button className="btn-secondary text-sm" onClick={handleExport}>
-              Export
-            </button>
-            <button className="btn-primary text-sm">Save</button>
+            <button className="btn-primary h-7 text-xs px-3">Save</button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto bg-surface-darkest flex items-center justify-center p-8">
-          <div className="relative shadow-depth rounded-lg" style={{ transform: `scale(${Math.min(1, (typeof window !== 'undefined' ? window.innerWidth - 200 : 1400) / canvasSize.width * 0.5)})` }}>
-            <canvas ref={canvasRef} className="bg-white rounded-lg shadow-depth"></canvas>
+        {/* Canvas Viewport */}
+        <div className="flex-1 min-h-0 bg-surface-darkest overflow-auto flex items-center justify-center p-6 scrollbar-thin">
+          <div className="relative shadow-depth rounded-sm bg-white">
+            <canvas ref={canvasRef} className="block" />
           </div>
         </div>
       </div>
 
-      <div className="w-72 bg-surface-dark border-l border-border overflow-y-auto">
-        <div className="p-4">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">Properties</h3>
+      {/* Right Properties Panel */}
+      <div className="w-64 shrink-0 panel border-l overflow-y-auto scrollbar-thin">
+        <div className="p-3">
+          <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Properties</h3>
 
           {selectedObject ? (
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-text-muted mb-1 block">Position</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-text-dim">X</label>
-                    <input
-                      type="number"
-                      value={Math.round(selectedObject.left || 0)}
-                      className="input-field w-full text-sm"
-                      onChange={(e) => { selectedObject.set('left', parseInt(e.target.value)); fabricRef.current?.renderAll(); }}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-text-dim">Y</label>
-                    <input
-                      type="number"
-                      value={Math.round(selectedObject.top || 0)}
-                      className="input-field w-full text-sm"
-                      onChange={(e) => { selectedObject.set('top', parseInt(e.target.value)); fabricRef.current?.renderAll(); }}
-                    />
-                  </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-text-muted mb-1 block">X</label>
+                  <input
+                    type="number"
+                    value={Math.round(selectedObject.left || 0)}
+                    className="input-field w-full text-xs h-7"
+                    onChange={(e) => { selectedObject.set('left', parseInt(e.target.value)); fabricRef.current?.renderAll(); }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-text-muted mb-1 block">Y</label>
+                  <input
+                    type="number"
+                    value={Math.round(selectedObject.top || 0)}
+                    className="input-field w-full text-xs h-7"
+                    onChange={(e) => { selectedObject.set('top', parseInt(e.target.value)); fabricRef.current?.renderAll(); }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-text-muted mb-1 block">W</label>
+                  <input
+                    type="number"
+                    value={Math.round((selectedObject.width || 0) * (selectedObject.scaleX || 1))}
+                    className="input-field w-full text-xs h-7"
+                    onChange={(e) => { const w = parseInt(e.target.value); selectedObject.scaleX = w / (selectedObject.width || 1); fabricRef.current?.renderAll(); }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-text-muted mb-1 block">H</label>
+                  <input
+                    type="number"
+                    value={Math.round((selectedObject.height || 0) * (selectedObject.scaleY || 1))}
+                    className="input-field w-full text-xs h-7"
+                    onChange={(e) => { const h = parseInt(e.target.value); selectedObject.scaleY = h / (selectedObject.height || 1); fabricRef.current?.renderAll(); }}
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-text-muted mb-1 block">Size</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-text-dim">W</label>
-                    <input
-                      type="number"
-                      value={Math.round((selectedObject.width || 0) * (selectedObject.scaleX || 1))}
-                      className="input-field w-full text-sm"
-                      onChange={(e) => { const w = parseInt(e.target.value); selectedObject.scaleX = w / (selectedObject.width || 1); fabricRef.current?.renderAll(); }}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-text-dim">H</label>
-                    <input
-                      type="number"
-                      value={Math.round((selectedObject.height || 0) * (selectedObject.scaleY || 1))}
-                      className="input-field w-full text-sm"
-                      onChange={(e) => { const h = parseInt(e.target.value); selectedObject.scaleY = h / (selectedObject.height || 1); fabricRef.current?.renderAll(); }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-text-muted mb-1 block">Rotation</label>
+                <label className="text-[10px] text-text-muted mb-1 block">Rotation</label>
                 <input
                   type="range"
                   min="0"
@@ -439,7 +438,7 @@ export function DesignCanvas() {
               </div>
 
               <div>
-                <label className="text-xs text-text-muted mb-1 block">Opacity</label>
+                <label className="text-[10px] text-text-muted mb-1 block">Opacity</label>
                 <input
                   type="range"
                   min="0"
@@ -450,31 +449,31 @@ export function DesignCanvas() {
                 />
               </div>
 
-              {(selectedObject instanceof fabric.IText || (selectedObject as any)?.type === 'i-text') && (
+              {isText && (
                 <div>
-                  <label className="text-xs text-text-muted mb-1 block">Font Size</label>
+                  <label className="text-[10px] text-text-muted mb-1 block">Font Size</label>
                   <input
                     type="number"
-                    value={(selectedObject as unknown as InstanceType<typeof fabric.IText>).fontSize || 36}
-                    className="input-field w-full text-sm"
+                    value={(selectedObject as unknown as InstanceType<typeof fabric.IText>).fontSize || 42}
+                    className="input-field w-full text-xs h-7"
                     onChange={(e) => { selectedObject.set('fontSize', parseInt(e.target.value)); fabricRef.current?.renderAll(); }}
                   />
                 </div>
               )}
 
               <div>
-                <label className="text-xs text-text-muted mb-1 block">Fill Color</label>
+                <label className="text-[10px] text-text-muted mb-1 block">Fill</label>
                 <div className="flex gap-2">
                   <input
                     type="color"
-                    value={(selectedObject.fill as string) || '#d4884f'}
-                    className="w-10 h-10 rounded-lg cursor-pointer"
+                    value={selectedFill}
+                    className="w-8 h-8 rounded cursor-pointer border border-border p-0.5 bg-white"
                     onChange={(e) => { selectedObject.set('fill', e.target.value); fabricRef.current?.renderAll(); }}
                   />
                   <input
                     type="text"
-                    value={(selectedObject.fill as string) || '#d4884f'}
-                    className="input-field flex-1 text-sm"
+                    value={selectedFill}
+                    className="input-field flex-1 text-xs h-8"
                     onChange={(e) => { selectedObject.set('fill', e.target.value); fabricRef.current?.renderAll(); }}
                   />
                 </div>
@@ -485,29 +484,29 @@ export function DesignCanvas() {
               <div className="p-3 rounded-lg bg-brand-50 border border-brand-200">
                 <div className="flex items-center gap-2 mb-2">
                   <Palette className="w-4 h-4 text-brand-600" />
-                  <span className="text-sm font-medium text-brand-800">Active Brand</span>
+                  <span className="text-xs font-semibold text-brand-800">Active Brand</span>
                 </div>
                 {activeBrand ? (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded" style={{ backgroundColor: activeBrand.color }}></div>
-                      <span className="text-sm text-text-secondary">{activeBrand.name}</span>
+                      <div className="w-5 h-5 rounded border border-border shadow-sm" style={{ backgroundColor: activeBrand.color }} />
+                      <span className="text-xs text-text-secondary font-medium">{activeBrand.name}</span>
                     </div>
-                    <div className="text-xs text-text-dim">Fonts: {activeBrand.fonts.join(', ')}</div>
+                    <div className="text-[10px] text-text-muted">Fonts: {activeBrand.fonts.join(', ')}</div>
                   </div>
                 ) : (
-                  <p className="text-xs text-text-dim">No brand selected</p>
+                  <p className="text-[10px] text-text-muted">No brand selected</p>
                 )}
               </div>
 
               <div>
-                <label className="text-xs text-text-muted mb-2 block">Canvas Background</label>
-                <div className="flex gap-2 flex-wrap">
-                  {['#faf6f0', '#ffffff', '#f5efe7', '#f2dec7', '#e8dfd2', '#3d3229'].map((c) => (
+                <label className="text-[10px] text-text-muted mb-2 block">Canvas Background</label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {['#ffffff', '#faf6f0', '#f3ece3', '#e8dfd2', '#2c241c', activeBrand?.color || '#c26e3a'].map((c) => (
                     <button
                       key={c}
                       onClick={() => handleApplyBackground(c)}
-                      className="w-8 h-8 rounded-lg border border-border shadow-sm"
+                      className="w-6 h-6 rounded border border-border shadow-sm"
                       style={{ backgroundColor: c }}
                       title={c}
                     />
@@ -516,20 +515,13 @@ export function DesignCanvas() {
               </div>
 
               <div>
-                <label className="text-xs text-text-muted mb-2 block">Quick Actions</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => handleApplyBackground(activeBrand?.color || '#d4884f')} className="btn-secondary text-xs">
-                    <Palette className="w-3 h-3 inline mr-1" /> Brand BG
-                  </button>
-                  <button onClick={() => handlePresetChange('Instagram Post')} className="btn-secondary text-xs">
-                    <ImageIcon className="w-3 h-3 inline mr-1" /> IG Post
-                  </button>
-                  <button onClick={() => handlePresetChange('YouTube Thumbnail')} className="btn-secondary text-xs">
-                    <ImageIcon className="w-3 h-3 inline mr-1" /> YouTube
-                  </button>
-                  <button onClick={() => handlePresetChange('A4 Portrait')} className="btn-secondary text-xs">
-                    <Layers className="w-3 h-3 inline mr-1" /> A4 Print
-                  </button>
+                <label className="text-[10px] text-text-muted mb-2 block">Quick Presets</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {['Instagram Post', 'Instagram Story', 'YouTube Thumbnail', 'A4 Portrait'].map((name) => (
+                    <button key={name} onClick={() => handlePresetChange(name)} className="btn-secondary text-[10px] px-2 py-1.5 h-auto">
+                      <ImageIcon className="w-3 h-3" /> {name.replace('Instagram ', 'IG ')}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

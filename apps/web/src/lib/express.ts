@@ -1,8 +1,21 @@
+import { LucideIcon, Layout, Image, FileText, Video, Music, Briefcase, Share2, Star, PenTool, Layers, Smartphone, Monitor, Type, FileImage, Receipt, BadgeDollarSign } from 'lucide-react';
+
 export interface QuickAction {
   id: string;
   label: string;
   icon: string;
   description: string;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  category: 'social' | 'document' | 'video' | 'audio' | 'branding' | 'marketing';
+  description: string;
+  icon: LucideIcon;
+  width: number;
+  height: number;
+  previewColor?: string;
 }
 
 export const quickActions: QuickAction[] = [
@@ -53,6 +66,189 @@ export const quickActions: QuickAction[] = [
     label: 'Poster',
     icon: 'Image',
     description: 'Create promotional posters',
+  },
+];
+
+export const templates: Template[] = [
+  {
+    id: 'ig-post',
+    name: 'Instagram Post',
+    category: 'social',
+    description: '1080×1080 square social post',
+    icon: Image,
+    width: 1080,
+    height: 1080,
+    previewColor: '#d4884f',
+  },
+  {
+    id: 'ig-story',
+    name: 'Instagram Story',
+    category: 'social',
+    description: '1080×1920 vertical story',
+    icon: Smartphone,
+    width: 1080,
+    height: 1920,
+    previewColor: '#5a8fa8',
+  },
+  {
+    id: 'yt-thumb',
+    name: 'YouTube Thumbnail',
+    category: 'social',
+    description: '1280×720 video thumbnail',
+    icon: Video,
+    width: 1280,
+    height: 720,
+    previewColor: '#c45c3e',
+  },
+  {
+    id: 'fb-post',
+    name: 'Facebook Post',
+    category: 'social',
+    description: '1200×630 horizontal post',
+    icon: Share2,
+    width: 1200,
+    height: 630,
+    previewColor: '#5a9a6e',
+  },
+  {
+    id: 'presentation',
+    name: 'Presentation',
+    category: 'document',
+    description: '1920×1080 slide deck',
+    icon: Monitor,
+    width: 1920,
+    height: 1080,
+    previewColor: '#d4a843',
+  },
+  {
+    id: 'a4-flyer',
+    name: 'A4 Flyer',
+    category: 'document',
+    description: '2480×3508 print flyer',
+    icon: FileText,
+    width: 2480,
+    height: 3508,
+    previewColor: '#a89a8a',
+  },
+  {
+    id: 'business-card',
+    name: 'Business Card',
+    category: 'branding',
+    description: '1050×600 business card',
+    icon: Briefcase,
+    width: 1050,
+    height: 600,
+    previewColor: '#6b5d50',
+  },
+  {
+    id: 'logo',
+    name: 'Logo',
+    category: 'branding',
+    description: '1024×1024 logo design',
+    icon: PenTool,
+    width: 1024,
+    height: 1024,
+    previewColor: '#c26e3a',
+  },
+  {
+    id: 'promo-banner',
+    name: 'Promo Banner',
+    category: 'marketing',
+    description: 'Wide banner for ads or web',
+    icon: Layout,
+    width: 2560,
+    height: 1440,
+    previewColor: '#d98c5f',
+  },
+  {
+    id: 'quote-card',
+    name: 'Quote Card',
+    category: 'social',
+    description: 'Text-focused quote design',
+    icon: Type,
+    width: 1080,
+    height: 1080,
+    previewColor: '#dfa575',
+  },
+  {
+    id: 'reel-cover',
+    name: 'Reel Cover',
+    category: 'video',
+    description: 'Vertical short-form cover',
+    icon: Video,
+    width: 1080,
+    height: 1920,
+    previewColor: '#83432a',
+  },
+  {
+    id: 'podcast-cover',
+    name: 'Podcast Cover',
+    category: 'audio',
+    description: 'Audio show cover art',
+    icon: Music,
+    width: 1400,
+    height: 1400,
+    previewColor: '#5a8fa8',
+  },
+  {
+    id: 'invoice',
+    name: 'Invoice',
+    category: 'document',
+    description: 'Clean invoice document',
+    icon: Receipt,
+    width: 794,
+    height: 1123,
+    previewColor: '#9a8b7a',
+  },
+  {
+    id: 'price-list',
+    name: 'Price List',
+    category: 'marketing',
+    description: 'Product or service pricing',
+    icon: BadgeDollarSign,
+    width: 1080,
+    height: 1920,
+    previewColor: '#c45c3e',
+  },
+  {
+    id: 'photo-collage',
+    name: 'Photo Collage',
+    category: 'social',
+    description: 'Multi-photo social collage',
+    icon: FileImage,
+    width: 1080,
+    height: 1080,
+    previewColor: '#5a9a6e',
+  },
+  {
+    id: 'testimonial',
+    name: 'Testimonial',
+    category: 'marketing',
+    description: 'Customer review graphic',
+    icon: Star,
+    width: 1080,
+    height: 1080,
+    previewColor: '#d4a843',
+  },
+  {
+    id: 'web-hero',
+    name: 'Web Hero',
+    category: 'marketing',
+    description: 'Website hero section',
+    icon: Monitor,
+    width: 1920,
+    height: 1080,
+    previewColor: '#a1542e',
+  },
+  {
+    id: 'social-carousel',
+    name: 'Social Carousel',
+    category: 'social',
+    description: 'Instagram carousel slide',
+    icon: Layers,
+    width: 1080,
+    height: 1350,
+    previewColor: '#5a8fa8',
   },
 ];
 

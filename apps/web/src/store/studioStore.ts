@@ -46,6 +46,8 @@ interface StudioState {
   apiKey: string;
   useIdeogram: boolean;
   chatterboxUrl: string;
+  favorites: string[];
+  recentTemplates: string[];
 
   setActiveBrand: (id: string | null) => void;
   addBrand: (brand: Brand) => void;
@@ -57,6 +59,8 @@ interface StudioState {
   setApiKey: (key: string) => void;
   setUseIdeogram: (value: boolean) => void;
   setChatterboxUrl: (url: string) => void;
+  toggleFavorite: (templateId: string) => void;
+  addRecentTemplate: (templateId: string) => void;
   getActiveBrand: () => Brand | null;
   getSelectedImage: () => GeneratedImage | null;
 }
@@ -78,6 +82,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   apiKey: '',
   useIdeogram: true,
   chatterboxUrl: 'https://techengineerworkstation--chatterbox-tts-chatterbox-serve.modal.run',
+  favorites: [],
+  recentTemplates: [],
 
   setActiveBrand: (id) => set({ activeBrandId: id }),
   addBrand: (brand) => set((state) => ({ brands: [...state.brands, brand] })),
@@ -99,6 +105,16 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setApiKey: (key) => set({ apiKey: key }),
   setUseIdeogram: (value) => set({ useIdeogram: value }),
   setChatterboxUrl: (url) => set({ chatterboxUrl: url }),
+  toggleFavorite: (templateId) =>
+    set((state) => ({
+      favorites: state.favorites.includes(templateId)
+        ? state.favorites.filter((id) => id !== templateId)
+        : [...state.favorites, templateId],
+    })),
+  addRecentTemplate: (templateId) =>
+    set((state) => ({
+      recentTemplates: [templateId, ...state.recentTemplates.filter((id) => id !== templateId)].slice(0, 10),
+    })),
   getActiveBrand: () => {
     const state = get();
     return state.brands.find((b) => b.id === state.activeBrandId) || state.brands[0] || null;

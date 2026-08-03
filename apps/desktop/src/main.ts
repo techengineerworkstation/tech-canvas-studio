@@ -16,8 +16,8 @@ function createWindow() {
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
     title: 'Tech Canvas Studio',
-    backgroundColor: '#0a0a0f',
-    darkTheme: true,
+    backgroundColor: '#ede4d8',
+    darkTheme: false,
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
