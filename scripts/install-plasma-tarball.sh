@@ -72,7 +72,7 @@ detect_haswell() {
 }
 
 if detect_haswell; then
-  COMPAT_FLAGS+=(--disable-gpu --no-sandbox)
+  COMPAT_FLAGS+=(--disable-gpu --no-sandbox --ozone-platform=x11)
 fi
 
 # Allow user override of GPU/sandbox flags
