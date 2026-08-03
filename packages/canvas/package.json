@@ -1,5 +1,5 @@
 {
-  "name": "@adobe-creative-suite/canvas",
+  "name": "@tech-canvas-studio/canvas",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -8,10 +8,10 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "fabric": "^6.0.0",
-    "@types/fabric": "^5.3.0"
+    "fabric": "^7.4.0"
   },
   "devDependencies": {
+    "@types/fabric": "^5.3.0",
     "typescript": "^5.5.0"
   }
 }

@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Play, Pause, SkipBack, SkipForward, 
+
+import {
+  Play, Pause, SkipBack, SkipForward,
   Upload, Download, Scissors, Trash2,
   Type, Music, Image, Film, Wand2,
-  Volume2, VolumeX, Settings, Plus
+  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -390,10 +390,10 @@ export function VideoEditor() {
                   {clips
                     .filter((c) => c.track === trackIndex)
                     .map((clip) => (
-                      <motion.div
+                      <div
                         key={clip.id}
                         className={cn(
-                          'absolute h-10 rounded-md cursor-pointer flex items-center px-2 text-xs',
+                          'absolute h-10 rounded-md cursor-pointer flex items-center px-2 text-xs transition-colors duration-150',
                           clip.type === 'video' && 'bg-brand-500/80',
                           clip.type === 'image' && 'bg-accent-cool/80',
                           clip.type === 'audio' && 'bg-accent-green/80',
@@ -406,7 +406,7 @@ export function VideoEditor() {
                         onClick={() => setSelectedClip(clip)}
                       >
                         <span className="text-white truncate">{clip.name}</span>
-                      </motion.div>
+                      </div>
                     ))}
                 </div>
               ))}

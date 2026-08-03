@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Music, Volume2, VolumeX, Play, Pause,
-  Upload, Download, Wand2, Globe, ExternalLink,
-  Loader2
+import React, { useState, useRef } from 'react';
+import {
+  Music, Volume2, Play, Pause, Upload, Download,
+  Wand2, Globe, ExternalLink, Loader2, ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStudioStore } from '@/store/studioStore';
+import { generateChatterboxTTS, downloadBlob } from '@/lib/chatterbox';
 
 const copyrightFreeSources = [
   { name: 'Pixabay Music', url: 'https://pixabay.com/music/search/', description: 'Free royalty-free music' },
@@ -16,10 +16,8 @@ const copyrightFreeSources = [
   { name: 'Artlist', url: 'https://artlist.io/royalty-free-music/', description: 'Royalty-free music and SFX' },
   { name: 'Uppbeat', url: 'https://uppbeat.io/browse/music/', description: 'Free music for creators' },
   { name: 'Freesound', url: 'https://freesound.org/', description: 'Collaborative sound database' },
-  { name: 'BBC Sound Effects', url: 'https://sound-effects.bbcrewind.co.uk/', description: 'BBC sound effects archive' },
   { name: 'Mixkit', url: 'https://mixkit.co/free-sound-effects/', description: 'Free sound effects and music' },
   { name: 'Incompetech', url: 'https://incompetech.com/music/', description: 'Royalty-free by Kevin MacLeod' },
-  { name: 'Free Music Archive', url: 'https://freemusicarchive.org/', description: 'Free downloadable music' },
 ];
 
 const ttsVoices = [
@@ -39,31 +37,40 @@ interface AudioTrack {
 }
 
 export function AudioPanel() {
+  const chatterboxUrl = useStudioStore((s) => s.chatterboxUrl);
+  const setChatterboxUrl = useStudioStore((s) => s.setChatterboxUrl);
+
   const [ttsText, setTtsText] = useState('');
   const [selectedVoice, setSelectedVoice] = useState('default');
   const [isGenerating, setIsGenerating] = useState(false);
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const [showSources, setShowSources] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleGenerateTTS = async () => {
     if (!ttsText) return;
-    
     setIsGenerating(true);
-    
-    // TODO: Implement actual Chatterbox TTS API call
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      const blob = await generateChatterboxTTS(chatterboxUrl, ttsText, selectedVoice);
+      const url = URL.createObjectURL(blob);
       const newTrack: AudioTrack = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 15),
         name: `TTS - ${ttsText.substring(0, 20)}...`,
         duration: 5.2,
-        url: '',
+        url,
         type: 'voice',
       };
-      setAudioTracks([...audioTracks, newTrack]);
-      setIsGenerating(false);
+      setAudioTracks([newTrack, ...audioTracks]);
       setTtsText('');
-    }, 1500);
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate speech. Is the Chatterbox server running?');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleImportAudio = () => {
@@ -73,21 +80,48 @@ export function AudioPanel() {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
-      
       const newTrack: AudioTrack = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 15),
         name: file.name,
         duration: 3.5,
         url: URL.createObjectURL(file),
         type: 'music',
       };
-      setAudioTracks([...audioTracks, newTrack]);
+      setAudioTracks([newTrack, ...audioTracks]);
     };
     input.click();
   };
 
-  const togglePlay = (trackId: string) => {
-    setPlayingTrack(playingTrack === trackId ? null : trackId);
+  const togglePlay = (track: AudioTrack) => {
+    if (playingTrack === track.id) {
+      audioRef.current?.pause();
+      setPlayingTrack(null);
+      return;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = track.url;
+      audioRef.current.play();
+    } else {
+      const audio = new Audio(track.url);
+      audioRef.current = audio;
+      audio.play();
+      audio.onended = () => setPlayingTrack(null);
+    }
+    setPlayingTrack(track.id);
+  };
+
+  const handleDownloadTrack = (track: AudioTrack) => {
+    if (track.type === 'voice' && track.url.startsWith('blob:')) {
+      fetch(track.url)
+        .then((r) => r.blob())
+        .then((blob) => downloadBlob(blob, `tts-${track.id}.mp3`));
+    } else {
+      const a = document.createElement('a');
+      a.href = track.url;
+      a.download = track.name;
+      a.click();
+    }
   };
 
   const formatDuration = (seconds: number) => {
@@ -98,16 +132,22 @@ export function AudioPanel() {
 
   return (
     <div className="flex h-full">
-      {/* Left Panel - TTS */}
       <div className="w-96 bg-surface-dark border-r border-border overflow-y-auto">
         <div className="p-4">
-          {/* Text to Speech */}
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-text-primary mb-2">Text to Speech</h3>
             <p className="text-xs text-text-dim mb-3">
               Generate speech using Chatterbox TTS (self-hosted)
             </p>
-            
+
+            <input
+              type="url"
+              value={chatterboxUrl}
+              onChange={(e) => setChatterboxUrl(e.target.value)}
+              placeholder="Chatterbox TTS URL"
+              className="input-field w-full mb-3 text-xs"
+            />
+
             <textarea
               value={ttsText}
               onChange={(e) => setTtsText(e.target.value)}
@@ -129,6 +169,12 @@ export function AudioPanel() {
                 ))}
               </select>
             </div>
+
+            {error && (
+              <div className="mb-3 p-2 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
+                {error}
+              </div>
+            )}
 
             <button
               onClick={handleGenerateTTS}
@@ -152,7 +198,6 @@ export function AudioPanel() {
             </button>
           </div>
 
-          {/* Import Audio */}
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-text-primary mb-2">Import Audio</h3>
             <button
@@ -164,38 +209,27 @@ export function AudioPanel() {
             </button>
           </div>
 
-          {/* Copyright-Free Sources */}
           <div className="mb-6">
             <button
               onClick={() => setShowSources(!showSources)}
-              className="w-full flex items-center justify-between p-3 rounded-lg border border-border hover:border-border-light transition-all"
+              className="w-full flex items-center justify-between p-3 rounded-lg border border-border hover:border-border-light transition-colors duration-150"
             >
               <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-brand-400" />
-                <span className="text-sm font-medium">Copyright-Free Audio</span>
+                <Globe className="w-4 h-4 text-brand-600" />
+                <span className="text-sm font-medium text-text-primary">Copyright-Free Audio</span>
               </div>
-              <motion.div
-                animate={{ rotate: showSources ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown className="w-4 h-4" />
-              </motion.div>
+              <ChevronDown className={cn('w-4 h-4 transition-transform duration-150', showSources && 'rotate-180')} />
             </button>
 
             {showSources && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="mt-2 space-y-2"
-              >
+              <div className="mt-2 space-y-2">
                 {copyrightFreeSources.map((source) => (
                   <a
                     key={source.name}
                     href={source.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block p-2 rounded-lg hover:bg-surface-light transition-all"
+                    className="block p-2 rounded-lg hover:bg-surface-light transition-colors duration-150"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -206,13 +240,12 @@ export function AudioPanel() {
                     </div>
                   </a>
                 ))}
-              </motion.div>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Center - Audio Library */}
       <div className="flex-1 flex flex-col">
         <div className="h-12 bg-surface-dark border-b border-border flex items-center px-4">
           <h3 className="text-sm font-semibold text-text-primary">Audio Library</h3>
@@ -232,55 +265,36 @@ export function AudioPanel() {
           ) : (
             <div className="space-y-2">
               {audioTracks.map((track) => (
-                <motion.div
+                <div
                   key={track.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
                   className={cn(
-                    'flex items-center gap-4 p-3 rounded-lg border transition-all',
+                    'flex items-center gap-4 p-3 rounded-lg border transition-colors duration-150',
                     playingTrack === track.id
-                      ? 'border-brand-500 bg-brand-500/10'
+                      ? 'border-brand-500 bg-brand-50'
                       : 'border-border hover:border-border-light'
                   )}
                 >
-                  <button
-                    onClick={() => togglePlay(track.id)}
-                    className="btn-ghost p-2"
-                  >
-                    {playingTrack === track.id ? (
-                      <Pause className="w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
+                  <button onClick={() => togglePlay(track)} className="btn-ghost p-2">
+                    {playingTrack === track.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                   </button>
 
-                  <div className="flex-1">
-                    <div className="font-medium text-sm text-text-primary">{track.name}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm text-text-primary truncate">{track.name}</div>
                     <div className="flex items-center gap-2 text-xs text-text-dim">
-                      <span className="px-1.5 py-0.5 rounded bg-surface-light">
-                        {track.type}
-                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-surface-light">{track.type}</span>
                       <span>{formatDuration(track.duration)}</span>
                     </div>
                   </div>
 
-                  <button className="btn-ghost p-2">
+                  <button onClick={() => handleDownloadTrack(track)} className="btn-ghost p-2">
                     <Download className="w-4 h-4" />
                   </button>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-function ChevronDown({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
   );
 }

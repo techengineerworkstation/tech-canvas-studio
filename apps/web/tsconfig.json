@@ -16,10 +16,10 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@adobe-creative-suite/ui": ["../packages/ui/src"],
-      "@adobe-creative-suite/canvas": ["../packages/canvas/src"],
-      "@adobe-creative-suite/video": ["../packages/video/src"],
-      "@adobe-creative-suite/shared": ["../packages/shared/src"]
+      "@tech-canvas-studio/ui": ["../packages/ui/src"],
+      "@tech-canvas-studio/canvas": ["../packages/canvas/src"],
+      "@tech-canvas-studio/video": ["../packages/video/src"],
+      "@tech-canvas-studio/shared": ["../packages/shared/src"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

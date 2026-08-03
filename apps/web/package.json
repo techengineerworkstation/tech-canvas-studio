@@ -1,5 +1,5 @@
 {
-  "name": "@adobe-creative-suite/web",
+  "name": "@tech-canvas-studio/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,10 +10,10 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "^14.2.0",
+    "next": "^15.5.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "fabric": "^6.0.0",
+    "fabric": "^7.4.0",
     "@ffmpeg/ffmpeg": "^0.12.0",
     "@ffmpeg/util": "^0.12.0",
     "zustand": "^4.5.0",
@@ -32,7 +32,7 @@
     "@radix-ui/react-context-menu": "^2.2.0",
     "react-hot-toast": "^2.4.0",
     "date-fns": "^3.6.0",
-    "uuid": "^9.0.0"
+    "uuid": "^11.1.1"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
@@ -43,8 +43,9 @@
     "@types/uuid": "^9.0.0",
     "tailwindcss": "^3.4.0",
     "autoprefixer": "^10.4.0",
-    "postcss": "^8.4.0",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.0"
+    "postcss": "^8.5.25",
+    "sharp": "^0.35.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.5.0"
   }
 }

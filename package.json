@@ -1,5 +1,5 @@
 {
-  "name": "adobe-creative-suite",
+  "name": "tech-canvas-studio",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -9,11 +9,27 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    "type-check": "turbo type-check"
+    "type-check": "turbo type-check",
+    "package:desktop": "turbo build && cd apps/desktop && npm run package"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
     "typescript": "^5.5.0"
+  },
+  "overrides": {
+    "tar": "^7.5.20",
+    "@mapbox/node-pre-gyp": {
+      "tar": "^7.5.20"
+    },
+    "canvas": {
+      "@mapbox/node-pre-gyp": {
+        "tar": "^7.5.20"
+      }
+    },
+    "next": {
+      "postcss": "^8.5.25",
+      "sharp": "^0.35.0"
+    }
   },
   "packageManager": "npm@10.9.7"
 }

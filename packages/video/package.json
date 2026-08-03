@@ -1,5 +1,5 @@
 {
-  "name": "@adobe-creative-suite/video",
+  "name": "@tech-canvas-studio/video",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",

@@ -1,5 +1,5 @@
 {
-  "name": "@adobe-creative-suite/shared",
+  "name": "@tech-canvas-studio/shared",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
