@@ -1,0 +1,17 @@
+{
+  "name": "@adobe-creative-suite/canvas",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fabric": "^6.0.0",
+    "@types/fabric": "^5.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --background: 8 8 16;
+    --foreground: 241 245 249;
+    --card: 13 13 26;
+    --card-foreground: 241 245 249;
+    --primary: 124 58 237;
+    --primary-foreground: 255 255 255;
+    --secondary: 34 34 69;
+    --secondary-foreground: 148 163 184;
+    --muted: 18 18 42;
+    --muted-foreground: 100 116 139;
+    --accent: 233 69 96;
+    --accent-foreground: 255 255 255;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 30 30 58;
+    --input: 30 30 58;
+    --ring: 124 58 237;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-surface-darkest text-text-primary antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-dark;
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border-light rounded-full;
+    border: 2px solid transparent;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-500;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-surface-medium/85 backdrop-blur-xl border border-border/30 rounded-xl;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .glow-border {
+    @apply border border-brand-500/30;
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.15);
+  }
+
+  .glow-border:hover {
+    @apply border-brand-400/50;
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.25);
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-brand-500 via-brand-400 to-accent-hot 
+           text-white font-semibold py-3 px-6 rounded-xl 
+           transition-all duration-200 ease-out
+           hover:from-brand-400 hover:via-accent-hot hover:to-accent-warm
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  }
+
+  .btn-secondary {
+    @apply bg-surface-light border border-border text-text-primary 
+           font-medium py-2.5 px-5 rounded-lg 
+           transition-all duration-200
+           hover:bg-brand-500 hover:border-brand-500 hover:text-white
+           active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent border-none text-text-secondary 
+           font-medium py-2 px-4 rounded-lg 
+           transition-all duration-200
+           hover:bg-surface-light hover:text-text-primary;
+  }
+
+  .input-field {
+    @apply bg-surface-dark border border-border rounded-lg px-4 py-2.5 
+           text-text-primary placeholder:text-text-dim
+           transition-all duration-200
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none
+           hover:border-border-light;
+  }
+
+  .select-field {
+    @apply bg-surface-dark border border-border rounded-lg px-3 py-2 
+           text-text-primary text-sm
+           transition-all duration-200
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none
+           hover:border-border-light;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+  }
+
+  .card {
+    @apply bg-surface-dark border border-border rounded-xl p-4 
+           transition-all duration-200
+           hover:border-border-light;
+  }
+
+  .card-glass {
+    @apply glass-panel p-4 transition-all duration-200;
+  }
+
+  .tab-active {
+    @apply text-brand-400 border-b-2 border-brand-500 bg-surface-medium;
+  }
+
+  .tooltip {
+    @apply bg-surface-medium border border-border text-text-primary 
+           text-xs px-3 py-1.5 rounded-lg shadow-lg;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-400 to-accent-hot;
+  }
+
+  .bg-glass {
+    @apply bg-surface-medium/85 backdrop-blur-xl;
+  }
+
+  .border-glow {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+  }
+
+  .shadow-depth {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  .animate-in {
+    animation: fadeIn 0.3s ease-out, slideUp 0.3s ease-out;
+  }
+}
